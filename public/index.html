@@ -127,6 +127,7 @@ footer nav{all:unset;display:flex;gap:24px}
   <label>Name<input name="name" required autocomplete="name"></label>
   <label>Email<input name="email" type="email" required autocomplete="email"></label>
   <label>Message<textarea name="msg" rows="5" required></textarea></label>
+  <label style="position:absolute;left:-9999px" aria-hidden="true">Website<input name="website" tabindex="-1" autocomplete="off"></label>
   <button class="btn" type="submit">Send message <span>↗</span></button>
   <div class="note" id="note" role="status"></div>
  </form>
@@ -144,10 +145,13 @@ var ids=['home','about','portfolio','contact'];
 var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){links.forEach(function(l){l.classList.toggle('on',l.getAttribute('href')==='#'+e.target.id)})}})},{rootMargin:'-40% 0px -55% 0px'});
 ids.forEach(function(i){io.observe(document.getElementById(i))});
 document.getElementById('f').addEventListener('submit',function(e){
- e.preventDefault();var d=new FormData(e.target);
- var body='From: '+d.get('name')+' ('+d.get('email')+')\n\n'+d.get('msg');
- location.href='mailto:tahaoumesaoud@gmail.com?subject='+encodeURIComponent('Portfolio message from '+d.get('name'))+'&body='+encodeURIComponent(body);
- document.getElementById('note').textContent='Opening your email app to send the message.';
+ e.preventDefault();var f=e.target,note=document.getElementById('note'),btn=f.querySelector('button');
+ var d=new FormData(f);btn.disabled=true;note.textContent='Sending…';
+ fetch('/api/contact',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:d.get('name'),email:d.get('email'),message:d.get('msg'),website:d.get('website')})})
+ .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j}})})
+ .then(function(x){if(x.ok){note.textContent='Message sent. Thank you, I’ll reply soon.';f.reset()}else{note.textContent=x.j.error||'Something went wrong. Please try again.'}})
+ .catch(function(){note.textContent='Could not reach the server. Email me at tahaoumesaoud@gmail.com.'})
+ .then(function(){btn.disabled=false});
 });
 
 (function(){
@@ -163,4 +167,3 @@ document.getElementById('f').addEventListener('submit',function(e){
 </script>
 </body>
 </html>
- 
